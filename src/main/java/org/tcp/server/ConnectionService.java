@@ -1,4 +1,4 @@
-package org.gps.tcp;
+package org.tcp.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
