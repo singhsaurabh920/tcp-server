@@ -11,80 +11,31 @@ import java.net.UnknownHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import lombok.extern.slf4j.Slf4j;
+
 public interface ConnectionService {
-	public static final Logger logger = LoggerFactory.getLogger(TbTcpServerApplication.class);
-	
-	public static void lunchHelthCheck(int port,boolean log) {
-		Runnable runnable = () -> {
-			try {
-				ServerSocket serverSocket = new ServerSocket(port);
-				while (true) {
-					if (log) {
-						logger.info("Waiting [" + port + "]...........");
-					}
-					Socket socket = serverSocket.accept();
-					createHelthCheckConnection(socket,log);
-				}
-			} catch (UnknownHostException e) {
-				e.printStackTrace();
-				logger.info("Host error : " + e.getMessage());
-			} catch (IOException e) {
-				e.printStackTrace();
-				logger.info("I/O error : " + e.getMessage());
-			}
-		};
-		Thread thread = new Thread(runnable);
-		thread.start();
-	}
-	
-	public static void createHelthCheckConnection(Socket socket,boolean log) {
-		new Thread( () -> {
-			try {
-				PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-				BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "US-ASCII"));
-				while (true) {
-					try {
-						String msg = br.readLine();
-						if (log) {
-							logger.info(msg);
-						}
-						out.println(Thread.currentThread().getName() + " recevied[ " + msg + " ]");
-						out.flush();
-					} catch (Exception e) {
-						e.printStackTrace();
-						logger.info("Read line exception : " + e);
-					}
-					break;
-				}
-				br.close();
-				out.close();
-			} catch (Exception e) {
-				logger.info("Exception" + e.getMessage());
-			} finally {
-				try {
-					socket.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}).start();
-	}
+	public static final Logger log = LoggerFactory.getLogger(TcpServerApplication.class);
 
 	public static void lunchServer(int port) {
 		Runnable runnable = () -> {
+			ServerSocket serverSocket=null;
 			try {
-				ServerSocket serverSocket = new ServerSocket(port);
+				serverSocket = new ServerSocket(port);
 				while (true) {
-					logger.info("Waiting [" + port + "]...........");
+					//log.info("Waiting [" + port + "]...........");
 					Socket socket = serverSocket.accept();
 					createConnection(socket);
 				}
 			} catch (UnknownHostException e) {
-				e.printStackTrace();
-				logger.info("Host error : " + e.getMessage());
+				log.error("UnknownHostException - ", e);
 			} catch (IOException e) {
-				e.printStackTrace();
-				logger.info("I/O error : " + e.getMessage());
+				log.error("IOException - " + e);
+			}finally {
+				try {
+					serverSocket.close();
+				} catch (IOException e) {
+					log.error("IOException - ", e);
+				}
 			}
 		};
 		Thread thread = new Thread(runnable);
@@ -93,14 +44,14 @@ public interface ConnectionService {
 
 	public static void createConnection(Socket socket) {
 		Runnable runnable = () -> {
-			logger.info("Client connected : " + socket);
+			log.info("Client connected : " + socket);
 			try {
 				PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 				BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream(), "US-ASCII"));
 				while (true) {
 					try {
 						String msg = br.readLine();
-						logger.info(msg);
+						log.info(msg);
 						if (msg==null) {
 							out.println("Connection closed");
 							out.flush();
@@ -110,7 +61,7 @@ public interface ConnectionService {
 						out.flush();
 					} catch (Exception e) {
 						e.printStackTrace();
-						logger.info("Read line exception : " + e);
+						log.info("Read line exception : " + e);
 						break;
 					}
 				}
@@ -118,15 +69,15 @@ public interface ConnectionService {
 				out.close();
 			} catch (IOException e) {
 				e.printStackTrace();
-				logger.info("I/O error : " + e.getMessage());
+				log.info("I/O error : " + e.getMessage());
 			}
 			finally {
 				try {
 					socket.close();
-					logger.info("Connection closed");
+					log.info("Connection closed");
 				} catch (IOException e) {
 					e.printStackTrace();
-					logger.info("Socket close exception : " + e.getMessage());
+					log.info("Socket close exception : " + e.getMessage());
 				}
 			}
 		};
